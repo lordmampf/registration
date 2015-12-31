@@ -1,8 +1,15 @@
+<<<<<<< HEAD
 #body-login #email, #body-login #username, #body-login #password {
 	width: 223px;
 	padding-left: 36px;
+=======
+input[type="email"], input[type="text"], input[type="password"] {
+	width: 223px !important;
+	padding-left: 36px !important;
+>>>>>>> 8717ac4... Update# new sign up form
 }
-#email-icon, #username-icon, #password-icon {
+
+form img.svg {
 	position: absolute;
 	left: 16px;
 	top: 22px;

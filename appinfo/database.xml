@@ -16,11 +16,17 @@
 				<primary>true</primary>
 			</field>
 			<field>
+				<name>username</name>
+				<type>text</type>
+				<notnull>true</notnull>
+			</field>
+			<field>
 				<name>email</name>
 				<type>text</type>
 				<notnull>true</notnull>
 			</field>
 			<field>
+<<<<<<< HEAD
 				<name>username</name>
 				<type>text</type>
 			</field>
@@ -38,6 +44,12 @@
 				<default>false</default>
 			</field>
 			<field>
+=======
+				<name>display_name</name>
+				<type>text</type>
+			</field>
+			<field>
+>>>>>>> 8717ac4... Update# new sign up form
 				<name>token</name>
 				<type>text</type>
 				<notnull>true</notnull>
@@ -50,6 +62,20 @@
 				<name>requested</name>
 				<type>timestamp</type>
 				<notnull>true</notnull>
+			</field>
+			<field>
+				<name>password</name>
+				<type>text</type>
+				<notnull>true</notnull>
+			</field>
+			<field>
+				<name>email_validated</name>
+				<type>boolean</type>
+				<default>false</default>
+			</field>
+			<field>
+				<name>approved</name>
+				<type>boolean</type>
 			</field>
 		</declaration>
 	</table>
