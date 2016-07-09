@@ -16,12 +16,8 @@ namespace OCA\Registration\AppInfo;
 	'href' => \OC::$server->getURLGenerator()->linkToRoute('registration.register.askEmail')
 ]);
 
-<<<<<<< HEAD
-\OCP\App::registerAdmin('registration', 'admin');
-=======
-\OC_App::registerLogIn(array('name' => $c->query('L10N')->t('Register'), 'href' => $c->query('URLGenerator')->linkToRoute('registration.register.askEmail')));
 
-\OCP\App::registerAdmin($c->getAppName(), 'admin');
+\OCP\App::registerAdmin('registration', 'admin');
 
 // Witchcraft!
 $request = \OC::$server->getRequest();
@@ -32,4 +28,3 @@ if (isset($request->server['REQUEST_URI'])) {
 		\OCP\Util::addStyle('registration', 'settings-users-inject');
 	}
 }
->>>>>>> 2dcec82... WIP: use black magic to modify settings/users page

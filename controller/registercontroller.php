@@ -73,25 +73,23 @@ class RegisterController extends Controller {
 	 */
 	public function validateEmail() {
 		$email = $this->request->getParam('email');
-<<<<<<< HEAD
 
 		if (!$this->registrationService->checkAllowedDomains($email)) {
 			return new TemplateResponse('registration', 'domains', [
 				'domains' => $this->registrationService->getAllowedDomains()
 			], 'guest');
-=======
-		$username = $this->request->getParam('username');
-		$password = $this->request->getParam('password');
-		$display_name = $this->request->getParam('display_name');
-		if ( !$this->mailer->validateMailAddress($email) ) {
-			return new TemplateResponse('', 'error', array(
-				'errors' => array(array(
-					'error' => $this->l10n->t('The email address you entered is not valid'),
-					'hint' => ''
-				))
-			), 'error');
 		}
+				
+		///TODO!!!!!!!!!!
+		
+		try {
+			$this->registrationService->validateEmail($email);
+		} catch (RegistrationException $e) {
+			return $this->renderError($e->getMessage(), $e->getHint());
+		}		
 
+		
+		/*
 		// find if there is an existing request
 		if ( $this->pendingreg->find($email) ) {
 			$this->pendingreg->delete($email);
@@ -113,74 +111,31 @@ class RegisterController extends Controller {
 					'hint' => ''
 				))
 			), 'error');
->>>>>>> 8717ac4... Update# new sign up form
-		}
+		}*/
+		
+		
+		$username = $this->request->getParam('username');
+		$password = $this->request->getParam('password');
+		
+		
 		try {
-			$this->registrationService->validateEmail($email);
+			$this->registrationService->validateUsername($username);
+		} catch (RegistrationException $e) {
+			return $this->renderError($e->getMessage(), $e->getHint());
+		}		
+
+		
+		/*
+	
+		try {
 			$registration = $this->registrationService->createRegistration($email);
 			$this->mailService->sendTokenByMail($registration);
 		} catch (RegistrationException $e) {
 			return $this->renderError($e->getMessage(), $e->getHint());
 		}
+*/
+		
 
-
-<<<<<<< HEAD
-=======
-		// allow only from specific email domain
-		$allowed_domains = $this->config->getAppValue($this->appName, 'allowed_domains', '');
-		if ( $allowed_domains !== '' ) {
-			$allowed_domains = explode(';', $allowed_domains);
-			$allowed = false;
-			foreach ( $allowed_domains as $domain ) {
-				$maildomain=explode("@",$email)[1];
-				// valid domain, everythings fine
-				if ($maildomain === $domain) {
-					$allowed=true;
-					break;
-				}
-			}
-			if ( $allowed === false ) {
-				return new TemplateResponse('registration', 'domains', ['domains' =>
-					$allowed_domains
-				], 'guest');
-			}
-		}
-
-		// validate username as in UserManager::createUser()
-		try {
-			if (preg_match('/[^a-zA-Z0-9 _\.@\-]/', $username)) {
-				throw new \Exception($this->l10n->t('Only the following characters are allowed in a username:'
-					. ' "a-z", "A-Z", "0-9", and "_.@-"'));
-			}
-			// No empty username
-			if (trim($username) == '') {
-				throw new \Exception($this->l10n->t('A valid username must be provided'));
-			}
-			// No empty password
-			if (trim($password) == '') {
-				throw new \Exception($this->l10n->t('A valid password must be provided'));
-			}
-		} catch (\Exception $e) {
-			return new TemplateResponse('', 'error', array(
-				'errors' => array(array(
-					'error' => $e->getMessage(),
-					'hint' => ''
-				))
-			), 'error');
-		}
-
-		$token = $this->pendingreg->save($username, $display_name, $email, \OC::$server->getHasher()->hash($password));
-		try {
-			$this->sendValidationEmail($token, $email);
-		} catch (\Exception $e) {
-			return new TemplateResponse('', 'error', array(
-				'errors' => array(array(
-					'error' => $this->l10n->t('A problem occurred sending email, please contact your administrator.'),
-					'hint' => ''
-				))
-			), 'error');
-		}
->>>>>>> 8717ac4... Update# new sign up form
 		return new TemplateResponse('registration', 'message', array('msg' =>
 			$this->l10n->t('Verification email successfully sent.')
 		), 'guest');

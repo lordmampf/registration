@@ -199,6 +199,37 @@ class RegistrationService {
 		if($this->registrationMapper->usernameIsPending($username) || $this->userManager->get($username) !== null) {
 			throw new RegistrationException($this->l10n->t('The username you have chosen already exists.'));
 		}
+		
+		
+		
+		/*
+		TODO???
+		
+		// validate username as in UserManager::createUser()
+		try {
+			if (preg_match('/[^a-zA-Z0-9 _\.@\-]/', $username)) {
+				throw new \Exception($this->l10n->t('Only the following characters are allowed in a username:'
+					. ' "a-z", "A-Z", "0-9", and "_.@-"'));
+			}
+			// No empty username
+			if (trim($username) == '') {
+				throw new \Exception($this->l10n->t('A valid username must be provided'));
+			}
+			// No empty password
+			if (trim($password) == '') {
+				throw new \Exception($this->l10n->t('A valid password must be provided'));
+			}
+		} catch (\Exception $e) {
+			return new TemplateResponse('', 'error', array(
+				'errors' => array(array(
+					'error' => $e->getMessage(),
+					'hint' => ''
+				))
+			), 'error');
+		}
+		
+		*/
+		
 	}
 
 	/**
