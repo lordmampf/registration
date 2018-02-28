@@ -20,6 +20,9 @@ use \OCP\AppFramework\Controller;
 use \OCP\IGroupManager;
 use \OCP\IL10N;
 use \OCP\IConfig;
+use OCA\Registration\Db\Registration;
+use OCA\Registration\Db\RegistrationMapper;
+use OCA\Registration\Service\RegistrationService;
 
 class SettingsController extends Controller {
 
@@ -31,16 +34,20 @@ class SettingsController extends Controller {
 	private $groupmanager;
 	/** @var string */
 	protected $appName;
-
-	public function __construct($appName, IRequest $request, IL10N $l10n, IConfig $config, IGroupManager $groupmanager){
+	/** @var RegistrationMapper */
+	private $registrationMapper;
+	/** @var RegistrationService */
+	private $registrationService;
+	
+	public function __construct($appName, IRequest $request, IL10N $l10n, IConfig $config, IGroupManager $groupmanager, RegistrationMapper $registrationMapper, RegistrationService $registrationService){
 		parent::__construct($appName, $request);
 		$this->l10n = $l10n;
 		$this->config = $config;
 		$this->groupmanager = $groupmanager;
 		$this->appName = $appName;
-	}
-
-	
+		$this->registrationMapper = $registrationMapper;
+		$this->registrationService = $registrationService;
+	}	
 
 	/**
 	 * @AdminRequired
@@ -48,9 +55,11 @@ class SettingsController extends Controller {
 	 * @param string $registered_user_group all newly registered user will be put in this group
 	 * @param string $allowed_domains Registrations are only allowed for E-Mailadresses with these domains
      * @param bool $admin_approval_required newly registered users have to be validated by an admin
+     * @param string $approve Email if user should be approved
 	 * @return DataResponse
 	 */
-	public function admin($registered_user_group, $allowed_domains, $admin_approval_required) {
+	public function admin($registered_user_group, $allowed_domains, $admin_approval_required, $approve) {
+
 		// handle domains
 		if ( ( $allowed_domains==='' ) || ( $allowed_domains === NULL ) ){
 			$this->config->deleteAppValue($this->appName, 'allowed_domains');
@@ -68,22 +77,9 @@ class SettingsController extends Controller {
 			$group_id_list[] = $group->getGid();
 		}
 		if ( $registered_user_group === 'none' ) {
-			$this->config->deleteAppValue($this->appName, 'registered_user_group');
-			return new DataResponse(array(
-				'data' => array(
-					'message' => (string) $this->l10n->t('Saved'),
-				),
-				'status' => 'success'
-				
-			));
+			$this->config->deleteAppValue($this->appName, 'registered_user_group');		
 		} else if ( in_array($registered_user_group, $group_id_list) ) {
 			$this->config->setAppValue($this->appName, 'registered_user_group', $registered_user_group);
-			return new DataResponse(array(
-				'data' => array(
-					'message' => (string) $this->l10n->t('Saved'),
-				),
-				'status' => 'success'
-			));
 		} else {
 			return new DataResponse(array(
 				'data' => array(
@@ -92,6 +88,27 @@ class SettingsController extends Controller {
 				'status' => 'error'
 			), Http::STATUS_NOT_FOUND);
 		}
+		
+		if(!empty($approve)) {  //$approve == email
+			$registration = $this->registrationMapper->find($approve);
+			
+			$this->registrationService->createAccount($registration);
+			
+			return new DataResponse(array(
+				'data' => array(
+					'message' => (string) $this->l10n->t('Account has been approved!'),
+				),
+				'status' => 'success'
+			));
+		}
+		
+		return new DataResponse(array(
+			'data' => array(
+				'message' => (string) $this->l10n->t('Saved'),
+			),
+			'status' => 'success'
+		));
+		
 	}
 	/**
 	 * @AdminRequired
@@ -112,12 +129,15 @@ class SettingsController extends Controller {
 
 		// handle admin validation
 		$admin_approval_required = $this->config->getAppValue($this->appName, 'admin_approval_required', "no");
-
+				
+		$registrations_needs_approvement = $this->registrationMapper->findRegistrationsWhichNeedApprovement();
+				
 		return new TemplateResponse('registration', 'admin', [
 			'groups' => $group_id_list,
 			'current' => $current_value,
 			'allowed' => $allowed_domains,
-			'approval_required' => $admin_approval_required
+			'approval_required' => $admin_approval_required,
+			'registrations_needs_approvement' => $registrations_needs_approvement
 		], '');
 	}
 }

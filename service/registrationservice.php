@@ -112,8 +112,16 @@ class RegistrationService {
 	public function confirmEmail(Registration &$registration) {
 		$registration->setEmailConfirmed(true);
 		$this->registrationMapper->update($registration);
+	}	
+	
+	/**
+	 * @param Registration $registration
+	 */
+	public function setClientSecret(Registration &$registration, $clientSecret) {
+		$registration->setClientSecret($clientSecret);
+		$this->registrationMapper->update($registration);
 	}
-
+		
 	/**
 	 * @param Registration $registration
 	 */
@@ -182,7 +190,7 @@ class RegistrationService {
 	 * @throws RegistrationException
 	 */
 	public function validateDisplayname($displayname) {
-		if($displayname === "") {
+		if(trim($displayname) == "") {
 			throw new RegistrationException($this->l10n->t('Please provide a valid display name.'));
 		}
 	}
@@ -192,7 +200,7 @@ class RegistrationService {
 	 * @throws RegistrationException
 	 */
 	public function validateUsername($username) {
-		if($username === "") {
+		if(trim($username) == "") {
 			throw new RegistrationException($this->l10n->t('Please provide a valid user name.'));
 		}
 
@@ -230,6 +238,16 @@ class RegistrationService {
 		
 		*/
 		
+	}
+	
+		/**
+	 * @param string $password
+	 * @throws RegistrationException
+	 */
+	public function validatePassword($password) {
+		if (trim($password) == '') {
+			throw new RegistrationException($this->l10n->t('A valid password must be provided'));
+		}
 	}
 
 	/**
@@ -327,12 +345,14 @@ class RegistrationService {
 			$groupId = "";
 		}
 
+		//lordmampf: I don't want "not approved users" in my users list
+			
 		// disable user if this is requested by config
-		$admin_approval_required = $this->config->getAppValue($this->appName, 'admin_approval_required', "no");
+/*		$admin_approval_required = $this->config->getAppValue($this->appName, 'admin_approval_required', "no");
 		if ($admin_approval_required === "yes") {
 			$user->setEnabled(false);
-		}
-
+		}*/
+		
 		// Delete pending registration if no client secret is stored
 		// with client secret implies registered via API
 		// without client secret implies registered via form

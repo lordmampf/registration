@@ -22,6 +22,7 @@ use \OCP\AppFramework\Http\RedirectResponse;
 use \OCP\AppFramework\Controller;
 use OCP\IURLGenerator;
 use \OCP\IL10N;
+use \OCP\IConfig;
 
 class RegisterController extends Controller {
 
@@ -33,7 +34,8 @@ class RegisterController extends Controller {
 	private $registrationService;
 	/** @var MailService */
 	private $mailService;
-
+	/** @var IConfig */
+	private $config;
 
 	public function __construct(
 		$appName,
@@ -41,13 +43,15 @@ class RegisterController extends Controller {
 		IL10N $l10n,
 		IURLGenerator $urlgenerator,
 		RegistrationService $registrationService,
-		MailService $mailService
+		MailService $mailService,
+		IConfig $config
 	){
 		parent::__construct($appName, $request);
 		$this->l10n = $l10n;
 		$this->urlgenerator = $urlgenerator;
 		$this->registrationService = $registrationService;
 		$this->mailService = $mailService;
+		$this->config = $config;
 	}
 
 	/**
@@ -79,62 +83,38 @@ class RegisterController extends Controller {
 				'domains' => $this->registrationService->getAllowedDomains()
 			], 'guest');
 		}
-				
-		///TODO!!!!!!!!!!
 		
 		try {
 			$this->registrationService->validateEmail($email);
 		} catch (RegistrationException $e) {
 			return $this->renderError($e->getMessage(), $e->getHint());
 		}		
-
-		
-		/*
-		// find if there is an existing request
-		if ( $this->pendingreg->find($email) ) {
-			$this->pendingreg->delete($email);
-			$token = $this->pendingreg->save($email);
-
-			try {
-				$this->sendValidationEmail($token, $email);
-			} catch (\Exception $e) {
-				return new TemplateResponse('', 'error', array(
-					'errors' => array(array(
-						'error' => $this->l10n->t('There is already a pending registration with this email, but while trying to send a new verification email, a problem occurred, please contact your administrator.'),
-						'hint' => ''
-					))
-				), 'error');
-			}
-			return new TemplateResponse('', 'error', array(
-				'errors' => array(array(
-					'error' => $this->l10n->t('There is already a pending registration with this email, a new verification email has been sent to the address.'),
-					'hint' => ''
-				))
-			), 'error');
-		}*/
-		
 		
 		$username = $this->request->getParam('username');
 		$password = $this->request->getParam('password');
-		
-		
+				
 		try {
 			$this->registrationService->validateUsername($username);
 		} catch (RegistrationException $e) {
 			return $this->renderError($e->getMessage(), $e->getHint());
 		}		
-
-		
-		/*
-	
+			
 		try {
-			$registration = $this->registrationService->createRegistration($email);
+			$this->registrationService->validatePassword($password);
+		} catch (RegistrationException $e) {
+			return $this->renderError($e->getMessage(), $e->getHint());
+		}
+
+		try {
+			$registration = $this->registrationService->createRegistration($email, $username, $password );			
+			
+			//lordmampf I don't understand why we need this, but it's used in API. This is form register so ClientSecret is null
+			$this->registrationService->setClientSecret($registration, null);
+						
 			$this->mailService->sendTokenByMail($registration);
 		} catch (RegistrationException $e) {
 			return $this->renderError($e->getMessage(), $e->getHint());
 		}
-*/
-		
 
 		return new TemplateResponse('registration', 'message', array('msg' =>
 			$this->l10n->t('Verification email successfully sent.')
@@ -149,14 +129,24 @@ class RegisterController extends Controller {
 	 * @return TemplateResponse
 	 */
 	public function verifyToken($token) {
-		try {
-			/** @var Registration $registration */
+		try {	
 			$registration = $this->registrationService->verifyToken($token);
 			$this->registrationService->confirmEmail($registration);
-
+			
 			// create account without form if username/password are already stored
 			if ($registration->getUsername() !== "" && $registration->getPassword() !== "") {
+			
+				if($this->config->getAppValue($this->appName, 'admin_approval_required', 'no') == "yes") {
+					//Admin will approve this account				
+				
+					return new TemplateResponse('registration', 'message',
+						['msg' => $this->l10n->t('Your account has been successfully created. An Admin will now approve your account!')],
+						'guest'
+					);
+				}
+				
 				$this->registrationService->createAccount($registration);
+				
 				return new TemplateResponse('registration', 'message',
 					['msg' => $this->l10n->t('Your account has been successfully created, you can <a href="%s">log in now</a>.', [$this->urlgenerator->getAbsoluteURL('/')])],
 					'guest'
@@ -178,6 +168,7 @@ class RegisterController extends Controller {
 	 * @return RedirectResponse|TemplateResponse
 	 */
 	public function createAccount($token) {
+	/*	
 		$username = $this->request->getParam('username');
 		$password = $this->request->getParam('password');
 		$registration = $this->registrationService->getRegistrationForToken($token);
@@ -207,7 +198,7 @@ class RegisterController extends Controller {
 				'message',
 				array('msg' => $this->l10n->t("Your account has been successfully created, but it still needs approval from an administrator.")),
 				'guest');
-		}
+		}*/
 	}
 
 	private function renderError($error, $hint="") {

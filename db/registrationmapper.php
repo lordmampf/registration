@@ -62,6 +62,11 @@ class RegistrationMapper extends Mapper {
 		}
 		return true;
 	}
+	
+	public function findRegistrationsWhichNeedApprovement() {
+		$sql = 'SELECT * FROM `*PREFIX*registration` WHERE `email_confirmed` = 1 AND `client_secret` IS NULL';
+		return $this->findEntities($sql);
+	}
 
 	/**
 	 * @param $email
