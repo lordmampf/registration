@@ -17,24 +17,24 @@
 	'			<tr>' +
 	'				<th>{{label-username}}</th>' +
 	'				<th>{{label-email}}</th>' +
-	'				<th>{{label-displayname}}</th>' +
-	'				<th>{{label-emailverified}}</th>' +
+	'				<th>{{label-emailvalidated}}</th>' +
 	'				<th>{{label-actions}}</th>' +
 	'			</tr>' +
 	'		</thead>' +
 	'		<tbody>' +
 	'			{{#each users}}' +
 	'			<tr>' +
-	'				<td>{{this.username}}</td>' +
-	'				<td>{{this.email}}</td>' +
-	'				<td>{{this.displayname}}</td>' +
-	'				<td>{{#if this.emailverified}}' +
+	'				<td class="reg-username">{{this.username}}</td>' +
+	'				<td class="reg-email">{{this.email}}</td>' +
+	'				<td>{{#if this.email_validated}}' +
 	'					<i class="reg-approve icon-checkmark"></i>'+
 	'					{{else}}'+
 	'					<i class="reg-deny icon-close"></i>'+
 	'					{{/if}}</td>' +
-	'				<td><a class="reg-deny icon-close">{{../label-deny}}</a> <a class="reg-approve icon-checkmark">{{../label-approve}}</a> '+
-	'				<a class="reg-delete icon-delete">{{../label-delete}}</a></td>' +
+	'				<td>'+
+	'				<a class="reg-approve icon-checkmark">{{../label-approve}}</a> '+
+	'				<a class="reg-delete icon-delete">{{../label-delete}}</a>' +
+	'				</td>' +
 	'			</tr>' +
 	'			{{/each}}' +
 	'		</tbody>' +
@@ -44,28 +44,57 @@
 	$(document).ready(function() {
 		var grouplist_template = Handlebars.compile(GROUPLIST_TEMPLATE);
 		var reg_content = Handlebars.compile(REG_CONTENT);
-		$('#app-content').after(reg_content({
+		
+		var reg_params = {
 			'label-username': t('registration', 'Username'),
 			'label-email': t('registration', 'Email'),
-			'label-displayname': t('registration', 'Display Name'),
-			'label-emailverified': t('registration', 'Email Verified'),
+			'label-emailvalidated': t('registration', 'Email verified'),
 			'label-actions': t('registration', 'Actions'),
 			'label-approve': t('registration', 'Approve'),
-			'label-deny': t('registration', 'Deny'),
 			'label-delete': t('registration', 'Delete'),
 			'users': [
-				{'username': 'clubmate', 'email': 'clib@mate.me', 'displayname': 'John Doe', 'email_validated': false},
+				{'username': 'error', 'email': 'error', 'email_validated': false},
 			],
-		}));
-		// TODO only append when count>0
-		$('#newgroup-init').after(grouplist_template({'count': '?', 'label': t('registration', 'Pending registration request')}));
-		$('#pending-reg').click(function() {
-			$('#app-content').hide();
-			$('#reg-content').show();
+		};
+		
+		//TODO remove hardcoded urls
+		$.getJSON( "/index.php/apps/registration/getRegistrations", function(data) {		
+			reg_params.users = data;
+	//		console.log(reg_params);			
+	
+			$('#app-content').after(reg_content(reg_params));
+						
+			$(".reg-delete").click(function() {
+				var row = $(this).parent().parent();
+				var username = row.find("td.reg-username").text();				
+			    $.post( "/index.php/apps/registration/deleteRegistration/" + username, function(data) {
+					console.log(data);
+					row.remove();
+			   });
+			});
+			
+			$(".reg-approve").click(function() {
+				var row = $(this).parent().parent();
+				var username = row.find("td.reg-username").text();				
+			    $.post( "/index.php/apps/registration/approveRegistration/" + username, function(data) {
+					console.log(data);
+					row.remove();
+			   });
+			});
+			
+			var regcount = Object.keys(reg_params.users).length;
+					
+			$('#newgroup-init').after(grouplist_template({'count': regcount, 'label': t('registration', 'Pending registration request')}));
+								
+			$('#pending-reg').click(function() {
+				$('#app-content').hide();
+				$('#reg-content').show();
+			});
+			$('#usergrouplist').on('click', '.isgroup', function () {
+				$('#app-content').show();
+				$('#reg-content').hide();
+			});
 		});
-		$('#usergrouplist').on('click', '.isgroup', function () {
-			$('#app-content').show();
-			$('#reg-content').hide();
-		});
+	
 	});
 })();

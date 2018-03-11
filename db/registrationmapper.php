@@ -51,6 +51,10 @@ class RegistrationMapper extends Mapper {
 		return $this->findEntity('SELECT * FROM `*PREFIX*registration` WHERE `client_secret` = ? ', [$secret]);
 	}
 
+	public function findByUsername($username) {
+		return $this->findEntity('SELECT * FROM `*PREFIX*registration` WHERE `username` = ? ', [$username]);
+	}
+	
 	public function usernameIsPending($username) {
 		try {
 			$entity = $this->findEntity(
@@ -64,7 +68,7 @@ class RegistrationMapper extends Mapper {
 	}
 	
 	public function findRegistrationsWhichNeedApprovement() {
-		$sql = 'SELECT * FROM `*PREFIX*registration` WHERE `email_confirmed` = 1 AND `client_secret` IS NULL';
+		$sql = 'SELECT * FROM `*PREFIX*registration` WHERE `client_secret` IS NULL';
 		return $this->findEntities($sql);
 	}
 

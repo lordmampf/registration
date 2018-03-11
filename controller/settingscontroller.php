@@ -58,7 +58,7 @@ class SettingsController extends Controller {
      * @param string $approve Email if user should be approved
 	 * @return DataResponse
 	 */
-	public function admin($registered_user_group, $allowed_domains, $admin_approval_required, $approve) {
+	public function admin($registered_user_group, $allowed_domains, $admin_approval_required) {
 
 		// handle domains
 		if ( ( $allowed_domains==='' ) || ( $allowed_domains === NULL ) ){
@@ -87,19 +87,6 @@ class SettingsController extends Controller {
 				),
 				'status' => 'error'
 			), Http::STATUS_NOT_FOUND);
-		}
-		
-		if(!empty($approve)) {  //$approve == email
-			$registration = $this->registrationMapper->find($approve);
-			
-			$this->registrationService->createAccount($registration);
-			
-			return new DataResponse(array(
-				'data' => array(
-					'message' => (string) $this->l10n->t('Account has been approved!'),
-				),
-				'status' => 'success'
-			));
 		}
 		
 		return new DataResponse(array(
@@ -131,7 +118,7 @@ class SettingsController extends Controller {
 		$admin_approval_required = $this->config->getAppValue($this->appName, 'admin_approval_required', "no");
 				
 		$registrations_needs_approvement = $this->registrationMapper->findRegistrationsWhichNeedApprovement();
-				
+		
 		return new TemplateResponse('registration', 'admin', [
 			'groups' => $group_id_list,
 			'current' => $current_value,

@@ -138,6 +138,8 @@ class RegisterController extends Controller {
 			
 				if($this->config->getAppValue($this->appName, 'admin_approval_required', 'no') == "yes") {
 					//Admin will approve this account				
+					
+				//	$this->mailService->notifyAdmins($userId, $user->isEnabled(), $groupId);
 				
 					return new TemplateResponse('registration', 'message',
 						['msg' => $this->l10n->t('Your account has been successfully created. An Admin will now approve your account!')],

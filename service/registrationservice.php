@@ -248,6 +248,10 @@ class RegistrationService {
 		if (trim($password) == '') {
 			throw new RegistrationException($this->l10n->t('A valid password must be provided'));
 		}
+		
+		if (strlen($password) < 8) {
+			throw new RegistrationException($this->l10n->t('A valid password must have 8 characters'));
+		}
 	}
 
 	/**
@@ -310,20 +314,27 @@ class RegistrationService {
 			$generatedPassword = $this->generateRandomDeviceToken();
 			$registration->setPassword($this->crypto->encrypt($generatedPassword));
 		}
-
+		
 		if ($username === null) {
 			$username = $registration->getUsername();
 		}
-
+		
 		if($registration->getPassword() !== null) {
 			$password = $this->crypto->decrypt($registration->getPassword());
 		}
+		
+		error_log($username);
+		error_log($password);
 
 		$user = $this->userManager->createUser($username, $password);
 		if ($user === false) {
 			throw new RegistrationException($this->l10n->t('Unable to create user, there are problems with the user backend.'));
 		}
 		$userId = $user->getUID();
+		
+		error_log($userId);
+	
+		
 		// Set user email
 		try {
 			$user->setEMailAddress($registration->getEmail());
@@ -345,8 +356,7 @@ class RegistrationService {
 			$groupId = "";
 		}
 
-		//lordmampf: I don't want "not approved users" in my users list
-			
+		//lordmampf: I don't want "not approved users" in my users list			
 		// disable user if this is requested by config
 /*		$admin_approval_required = $this->config->getAppValue($this->appName, 'admin_approval_required', "no");
 		if ($admin_approval_required === "yes") {
@@ -364,7 +374,8 @@ class RegistrationService {
 			}
 		}
 
-		$this->mailService->notifyAdmins($userId, $user->isEnabled(), $groupId);
+		//notify user
+		//	$this->mailService->notifyAdmins($userId, $user->isEnabled(), $groupId);
 		return $user;
 	}
 
@@ -382,6 +393,14 @@ class RegistrationService {
 	 */
 	public function getRegistrationForSecret($secret) {
 		return $this->registrationMapper->findBySecret($secret);
+	}
+	
+	/**
+	 * @param $secret
+	 * @return Registration
+	 */
+	public function getRegistrationForUsername($username) {
+		return $this->registrationMapper->findByUsername($username);
 	}
 
 	/**
@@ -490,5 +509,11 @@ class RegistrationService {
 			}
 		}
 	}
+	
+	public function findRegistrationsWhichNeedApprovement() {
+		return $this->registrationMapper->findRegistrationsWhichNeedApprovement();		
+	}
+	
+	
 
 }

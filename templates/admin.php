@@ -29,38 +29,5 @@ script('registration', 'settings');
 		<input type="checkbox" id="admin_approval_required" name="admin_approval_required" <?php if($_['approval_required'] === "yes" ) echo " checked"; ?>>
 		</label>
 	</p>
-	<br>
-	<?php /*  Realized that there is a better way
-	<p>
-		<h3><?php p($l->t('Users which needs Approvement')); ?></h3>
-		
-		<table class="grid">
-			<thead>
-			<tr>
-				<th id="headerEmail" scope="col"><?php p($l->t('Email')); ?></th>
-				<th id="headerUsername" scope="col"><?php p($l->t('Username')); ?></th>
-				<th id="headerDate" scope="col"><?php p($l->t('Registration Date')); ?></th>
-				<th id="headerApprove" scope="col"><?php p($l->t('Approve')); ?></th>
-			</tr>
-			</thead>
-			<tbody>
-
-		
-			<?php	foreach ( $_['registrations_needs_approvement'] as $registration ) { ?>
-			
-				<tr>
-					<td><?php echo $registration->getEmail(); ?> </td>
-					<td><?php echo $registration->getUsername(); ?> </td>
-					<td><?php echo $registration->getRequested(); ?> </td>
-					
-					<td>
-						<button type="submit" class ="approveBtn" value="<?php echo $registration->getEmail(); ?>"><?php p($l->t('Approve')); ?></button>
-					</td>
-				</tr>
-			
-			<?php } ?>
-			</tbody>
-		</table>
-	</p> */ ?>
-	
+	<br>	
 </form>
