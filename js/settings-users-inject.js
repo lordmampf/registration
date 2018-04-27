@@ -57,8 +57,7 @@
 			],
 		};
 		
-		//TODO remove hardcoded urls
-		$.getJSON( "/index.php/apps/registration/getRegistrations", function(data) {		
+		$.getJSON(OC.generateUrl("/apps/registration/getRegistrations"), function(data) {		
 			reg_params.users = data;
 	//		console.log(reg_params);			
 	
@@ -67,7 +66,7 @@
 			$(".reg-delete").click(function() {
 				var row = $(this).parent().parent();
 				var username = row.find("td.reg-username").text();				
-			    $.post( "/index.php/apps/registration/deleteRegistration/" + username, function(data) {
+			    $.post(OC.generateUrl("/apps/registration/deleteRegistration/" + username), function(data) {
 					console.log(data);
 					row.remove();
 			   });
@@ -76,7 +75,7 @@
 			$(".reg-approve").click(function() {
 				var row = $(this).parent().parent();
 				var username = row.find("td.reg-username").text();				
-			    $.post( "/index.php/apps/registration/approveRegistration/" + username, function(data) {
+			    $.post(OC.generateUrl("/apps/registration/approveRegistration/" + username), function(data) {
 					console.log(data);
 					row.remove();
 			   });
