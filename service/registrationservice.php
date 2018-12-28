@@ -155,7 +155,7 @@ class RegistrationService {
 
 	/**
 	 * @param string $email
-	 * @return Registration
+	 * @return Registration|true if there is a pending reg with this email, return the pending reg, if there are no problems with the email, return true.
 	 * @throws RegistrationException
 	 */
 	public function validateEmail($email) {
@@ -164,10 +164,10 @@ class RegistrationService {
 
 		// check for pending registrations
 		try {
-			return $this->registrationMapper->find($email);
-		} catch (\Exception $e) {}
+			return $this->registrationMapper->find($email);//if not found DB will throw a exception
+		} catch (DoesNotExistException $e) {}
 
-		if ( $this->config->getUsersForUserValue('settings', 'email', $email) ) {
+		if ( $this->userManager->getByEmail($email) ) {
 			throw new RegistrationException(
 				$this->l10n->t('A user has already taken this email, maybe you already have an account?'),
 				$this->l10n->t('You can <a href="%s">log in now</a>.', [$this->urlGenerator->getAbsoluteURL('/')])
@@ -182,7 +182,7 @@ class RegistrationService {
 				)
 			);
 		}
-		return null;
+		return true;
 	}
 
 	/**
@@ -307,7 +307,7 @@ class RegistrationService {
 	 * @param string $username
 	 * @param string $password
 	 * @return \OCP\IUser
-	 * @throws RegistrationException
+	 * @throws RegistrationException|\InvalidTokenException
 	 */
 	public function createAccount(Registration &$registration, $username = null, $password = null) {
 		if($password === null && $registration->getPassword() === null) {
@@ -326,6 +326,15 @@ class RegistrationService {
 		error_log($username);
 		error_log($password);
 
+		$this->validateUsername($username);
+
+		/* TODO
+		 * createUser tests username validity once, but validateUsername already checked it,
+		 * but createUser doesn't check if there is a pending registration with that name
+		 *
+		 * And validateUsername will throw RegistrationException while
+		 * createUser throws \InvalidTokenException in NC, \Exception in OC
+		 */
 		$user = $this->userManager->createUser($username, $password);
 		if ($user === false) {
 			throw new RegistrationException($this->l10n->t('Unable to create user, there are problems with the user backend.'));
@@ -345,12 +354,15 @@ class RegistrationService {
 		// Add user to group
 		$registered_user_group = $this->config->getAppValue($this->appName, 'registered_user_group', 'none');
 		if ( $registered_user_group !== 'none' ) {
-			try {
-				$group = $this->groupManager->get($registered_user_group);
+			$group = $this->groupManager->get($registered_user_group);
+			if ( $group === null ) {
+				// This might happen if $registered_user_group is deleted after setting the value
+				// Here I choose to log error instead of stopping the user to register
+				$this->logger->error("You specified newly registered users be added to '$registered_user_group' group, but it does not exist.");
+				$groupId = '';
+			} else {
 				$group->addUser($user);
 				$groupId = $group->getGID();
-			} catch (\Exception $e) {
-				throw new RegistrationException($e->getMessage());
 			}
 		} else {
 			$groupId = "";
@@ -478,7 +490,7 @@ class RegistrationService {
 		if ( method_exists($this->usersession, 'createSessionToken') ) {
 			$this->usersession->login($username, $password);
 			$this->usersession->createSessionToken($this->request, $userId, $username, $password);
-			return new RedirectResponse($this->urlGenerator->linkToRoute('files.view.index'));
+			return new RedirectResponse($this->urlGenerator->linkTo('', 'index.php'));
 		} elseif (\OC_User::login($username, $password)) {
 			$this->cleanupLoginTokens($userId);
 			// FIXME unsetMagicInCookie will fail from session already closed, so now we always remember

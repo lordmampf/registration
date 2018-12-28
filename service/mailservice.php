@@ -128,7 +128,7 @@ class MailService {
 		$to_arr = array();
 		foreach ( $admin_users as $au ) {
 			$au_email = $au->getEMailAddress();
-			if ( $au_email !== '' && $au->isEnabled()) {
+			if ( $au_email && $au->isEnabled()) {
 				$to_arr[$au_email] = $au->getDisplayName();
 			}
 		}
@@ -147,9 +147,12 @@ class MailService {
 	 * @throws \Exception
 	 */
 	private function sendNewUserNotifEmail(array $to, $username, $userIsEnabled) {
+		$link = $this->urlGenerator->linkToRoute('settings_users');
+		$link = $this->urlGenerator->getAbsoluteURL($link);
 		$template_var = [
 			'user' => $username,
-			'sitename' => $this->defaults->getName()
+			'sitename' => $this->defaults->getName(),
+			'link' => $link,
 		];
 
 		// handle user enableness

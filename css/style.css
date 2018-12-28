@@ -1,5 +1,5 @@
 #body-login #email, #body-login #username, #body-login #password {
-	width: 223px;
+	width: calc(100% - 56px);
 	padding-left: 36px;
 }
 
@@ -13,6 +13,10 @@ form img.svg {
 }
 #username-icon {
 	top: 17px;
+}
+
+input[type="submit"] {
+	width: calc(100% - 10px) !important;
 }
 
 .msg {

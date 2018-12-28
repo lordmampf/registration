@@ -71,47 +71,55 @@ class RegisterController extends Controller {
 	}
 
 	/**
+	 * User POST email, if email is valid and not duplicate, we send token by mail
 	 * @PublicPage
+	 * @AnonRateThrottle(limit=5, period=1)
 	 *
+	 * @param string $email
 	 * @return TemplateResponse
 	 */
-	public function validateEmail() {
-		$email = $this->request->getParam('email');
-
-		if (!$this->registrationService->checkAllowedDomains($email)) {
+	public function validateEmail($email) {//TODO rename to receiveUserEmail
+		if (!$this->registrationService->checkAllowedDomains($email)) {//TODO Duplicate code with Service
 			return new TemplateResponse('registration', 'domains', [
 				'domains' => $this->registrationService->getAllowedDomains()
 			], 'guest');
 		}
 		
-		try {
-			$this->registrationService->validateEmail($email);
-		} catch (RegistrationException $e) {
-			return $this->renderError($e->getMessage(), $e->getHint());
-		}		
-		
 		$username = $this->request->getParam('username');
 		$password = $this->request->getParam('password');
-				
+
 		try {
 			$this->registrationService->validateUsername($username);
 		} catch (RegistrationException $e) {
 			return $this->renderError($e->getMessage(), $e->getHint());
-		}		
-			
+		}
+		
 		try {
 			$this->registrationService->validatePassword($password);
 		} catch (RegistrationException $e) {
 			return $this->renderError($e->getMessage(), $e->getHint());
 		}
-
+		
 		try {
-			$registration = $this->registrationService->createRegistration($email, $username, $password );			
-			
-			//lordmampf I don't understand why we need this, but it's used in API. This is form register so ClientSecret is null
-			$this->registrationService->setClientSecret($registration, null);
-						
-			$this->mailService->sendTokenByMail($registration);
+			$reg = $this->registrationService->validateEmail($email);
+			if ( $reg === true ) {
+				try {
+					$registration = $this->registrationService->createRegistration($email, $username, $password );			
+					
+					//lordmampf I don't understand why we need this, but it's used in API. This is form register so ClientSecret is null
+					$this->registrationService->setClientSecret($registration, null);
+					
+					$this->mailService->sendTokenByMail($registration);
+				} catch (RegistrationException $e) {
+					return $this->renderError($e->getMessage(), $e->getHint());
+				}
+			} else {
+				$this->registrationService->generateNewToken($reg);
+				$this->mailService->sendTokenByMail($reg);
+				return new TemplateResponse('registration', 'message', array('msg' =>
+					$this->l10n->t('There is already a pending registration with this email, a new verification email has been sent to the address.')
+				), 'guest');
+			}
 		} catch (RegistrationException $e) {
 			return $this->renderError($e->getMessage(), $e->getHint());
 		}
@@ -177,9 +185,7 @@ class RegisterController extends Controller {
 
 		try {
 			$user = $this->registrationService->createAccount($registration, $username, $password);
-		} catch (RegistrationException $exception) {
-			return $this->renderError($exception->getMessage(), $exception->getHint());
-		} catch (\InvalidArgumentException $exception) {
+		} catch (\Exception $exception) {
 			// Render form with previously sent values
 			return new TemplateResponse('registration', 'form',
 				[

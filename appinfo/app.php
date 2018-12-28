@@ -15,16 +15,3 @@ namespace OCA\Registration\AppInfo;
 	'name' => \OC::$server->getL10N('registration')->t('Register'),
 	'href' => \OC::$server->getURLGenerator()->linkToRoute('registration.register.askEmail')
 ]);
-
-
-\OCP\App::registerAdmin('registration', 'admin');
-
-// Witchcraft!
-$request = \OC::$server->getRequest();
-if (isset($request->server['REQUEST_URI'])) {
-	$url = $request->server['REQUEST_URI'];
-	if (preg_match('%index.php/settings/users(/.*)?%', $url)) {
-		\OCP\Util::addScript('registration', 'settings-users-inject');
-		\OCP\Util::addStyle('registration', 'settings-users-inject');
-	}
-}
